@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Complaint</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: #fff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            width: 450px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #007bff;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        label {
+            font-weight: bold;
+            color: #333;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            outline: none;
+            background: #f1f1f1;
+            color: #333;
+            font-size: 14px;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            background: #e9f5ff;
+            border-color: #007bff;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        #message {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #28a745;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Register Complaint</h1>
+        <form id="complaintForm">
+            <div class="form-group">
+                <label for="fullName">Full Name:</label>
+                <input type="text" id="fullName" name="fullName" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number:</label>
+                <input type="tel" id="phone" name="phone" required>
+            </div>
+
+            <div class="form-group">
+                <label for="projectName">Project Name:</label>
+                <input type="text" id="projectName" name="projectName" required>
+            </div>
+
+            <div class="form-group">
+                <label for="category">Complaint Category:</label>
+                <select id="category" name="category" required>
+                    <option value="Service Issue">Service Issue</option>
+                    <option value="Billing">Billing</option>
+                    <option value="Technical">Technical</option>
+                    <option value="Others">Others</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="subject">Subject:</label>
+                <input type="text" id="subject" name="subject" required>
+            </div>
+
+
+            <div class="form-group">
+                <label for="complaintDescription">Complaint Description:</label>
+                <textarea id="complaintDescription" name="complaintDescription" rows="4" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="attachment">Attachment (Optional):</label>
+                <input type="file" id="attachment" name="attachment">
+            </div>
+            <div class="form-group">
+                <label for="preferredContact">Preferred Contact Method:</label>
+                <select id="preferredContact" name="preferredContact" required>
+                    <option value="Email">Email</option>
+                    <option value="Phone">Phone</option>
+                </select>
+            </div>
+
+            <button type="submit">Submit</button>
+        </form>
+        <p id="message"></p>
+    </div>
+
+    <script>    document.getElementById("complaintForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const file = formData.get("attachment");
+
+            let attachmentUrl = null;
+
+            if (file && file.size > 0) {
+                // **Upload File to Cloudinary using Preset**
+                const cloudinaryFormData = new FormData();
+                cloudinaryFormData.append("file", file);
+                cloudinaryFormData.append("upload_preset", "registration"); // Your Cloudinary preset name
+
+                try {
+                    const uploadResponse = await fetch("https://api.cloudinary.com/v1_1/ddvfsfsas/image/upload", {
+                        method: "POST",
+                        body: cloudinaryFormData,
+                    });
+
+                    const uploadData = await uploadResponse.json();
+                    attachmentUrl = uploadData.secure_url; // Get Cloudinary URL
+                } catch (error) {
+                    console.error("❌ Error uploading file to Cloudinary:", error);
+                    document.getElementById("message").textContent = "❌ Error uploading file. Please try again.";
+                    return;
+                }
+            }
+
+            // **Prepare Data for Backend**
+            const complaintData = {
+                fullName: formData.get("fullName"),
+                phone: formData.get("phone"),
+                projectName: formData.get("projectName"),
+                category: formData.get("category"),
+                subject: formData.get("subject"),
+                email: formData.get("email"),
+                preferredContact: formData.get("preferredContact"),
+                complaintDescription: formData.get("complaintDescription"),
+                attachment: attachmentUrl, // Cloudinary URL or null if no file uploaded
+            };
+
+            // **Submit Complaint to Backend**
+            fetch("https://crm-mu-sooty.vercel.app/api/complaints", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(complaintData),
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    document.getElementById("message").textContent = "✅ Complaint submitted successfully!";
+                    document.getElementById("complaintForm").reset();
+                })
+                .catch((error) => {
+                    document.getElementById("message").textContent = "❌ Error submitting complaint. Please try again.";
+                    document.getElementById("message").style.color = "red";
+                });
+        });
+
+
+    </script>
+</body>
+
+</html>
