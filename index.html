@@ -97,6 +97,31 @@
             font-weight: bold;
             color: #28a745;
         }
+
+        .track-section {
+            margin-top: 30px;
+        }
+
+        .track-section input {
+            width: 80%;
+            margin-right: 10px;
+        }
+
+        .track-section a {
+            text-decoration: none;
+            font-size: 16px;
+            color: #007bff;
+        }
+
+        .complaint-details {
+            margin-top: 20px;
+            text-align: left;
+            display: none;
+        }
+
+        .complaint-details p {
+            margin: 5px 0;
+        }
     </style>
 </head>
 
@@ -139,7 +164,6 @@
                 <input type="text" id="subject" name="subject" required>
             </div>
 
-
             <div class="form-group">
                 <label for="complaintDescription">Complaint Description:</label>
                 <textarea id="complaintDescription" name="complaintDescription" rows="4" required></textarea>
@@ -149,6 +173,7 @@
                 <label for="attachment">Attachment (Optional):</label>
                 <input type="file" id="attachment" name="attachment">
             </div>
+
             <div class="form-group">
                 <label for="preferredContact">Preferred Contact Method:</label>
                 <select id="preferredContact" name="preferredContact" required>
@@ -159,16 +184,88 @@
 
             <button type="submit">Submit</button>
         </form>
+
         <p id="message"></p>
+
+        <div class="track-section">
+            <a href="javascript:void(0)" onclick="toggleTrackSection()">Track Your Complaint Status</a>
+            <div id="trackForm" style="display:none; margin-top: 15px;">
+                <label for="complaintID">Enter Complaint ID:</label>
+                <input type="text" id="complaintID" name="complaintID">
+                <button type="button" onclick="trackComplaint()">Track Status</button>
+                <p id="trackMessage" style="margin-top: 10px;"></p>
+            </div>
+        </div>
+
+        <div class="complaint-details" id="complaintDetails">
+            <h2>Complaint Details</h2>
+            <p><strong>Full Name:</strong> <span id="detailFullName"></span></p>
+            <p><strong>Email:</strong> <span id="detailEmail"></span></p>
+            <p><strong>Phone Number:</strong> <span id="detailPhone"></span></p>
+            <p><strong>Project Name:</strong> <span id="detailProjectName"></span></p>
+            <p><strong>Category:</strong> <span id="detailCategory"></span></p>
+            <p><strong>Subject:</strong> <span id="detailSubject"></span></p>
+            <p><strong>Description:</strong> <span id="detailDescription"></span></p>
+            <p><strong>Status:</strong> <span id="detailStatus"></span></p>
+        </div>
     </div>
 
-    <script>    document.getElementById("complaintForm").addEventListener("submit", async function (e) {
+    <script>
+        // Function to toggle the "Track Your Complaint Status" form
+        function toggleTrackSection() {
+            const trackForm = document.getElementById("trackForm");
+            trackForm.style.display = trackForm.style.display === "none" ? "block" : "none";
+        }
+
+        // Function to fetch complaint status and details based on Complaint ID
+        async function trackComplaint() {
+            const complaintID = document.getElementById("complaintID").value;
+
+            if (!complaintID) {
+                alert('Please enter a Complaint ID');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:5000/api/complaints/${complaintID}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Display complaint details
+                    document.getElementById("complaintDetails").style.display = "block";
+                    document.getElementById("detailFullName").textContent = data.complaint.fullName;
+                    document.getElementById("detailEmail").textContent = data.complaint.email;
+                    document.getElementById("detailPhone").textContent = data.complaint.phone;
+                    document.getElementById("detailProjectName").textContent = data.complaint.projectName;
+                    document.getElementById("detailCategory").textContent = data.complaint.category;
+                    document.getElementById("detailSubject").textContent = data.complaint.subject;
+                    document.getElementById("detailDescription").textContent = data.complaint.complaintDescription;
+                    document.getElementById("detailStatus").textContent = data.complaint.status;
+                } else {
+                    document.getElementById("trackMessage").textContent = `❌ ${data.message}`;
+                    document.getElementById("trackMessage").style.color = "red";
+                    document.getElementById("complaintDetails").style.display = "none";
+                }
+            } catch (error) {
+                document.getElementById("trackMessage").textContent = "❌ Error fetching complaint status.";
+                document.getElementById("trackMessage").style.color = "red";
+                document.getElementById("complaintDetails").style.display = "none";
+            }
+        }
+
+        document.getElementById("complaintForm").addEventListener("submit", async function (e) {
             e.preventDefault();
 
             const formData = new FormData(this);
             const file = formData.get("attachment");
 
             let attachmentUrl = null;
+
+            // File Size Validation (Max 10MB)
+            if (file && file.size > 10 * 1024 * 1024) {
+                alert("File size exceeds 10MB. Please upload a smaller file.");
+                return;
+            }
 
             if (file && file.size > 0) {
                 // **Upload File to Cloudinary using Preset**
@@ -205,7 +302,7 @@
             };
 
             // **Submit Complaint to Backend**
-            fetch("https://crm-mu-sooty.vercel.app/api/complaints", {
+            fetch("http://localhost:5000/api/complaints", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(complaintData),
@@ -220,8 +317,6 @@
                     document.getElementById("message").style.color = "red";
                 });
         });
-
-
     </script>
 </body>
 
