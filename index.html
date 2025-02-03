@@ -227,7 +227,7 @@
             }
 
             try {
-                const response = await fetch(`http://localhost:5000/api/complaints/${complaintID}`);
+                const response = await fetch(`https://crm-mu-sooty.vercel.app/api/complaints/${complaintID}`);
                 const data = await response.json();
 
                 if (response.ok) {
@@ -302,7 +302,7 @@
             };
 
             // **Submit Complaint to Backend**
-            fetch("http://localhost:5000/api/complaints", {
+            fetch("https://crm-mu-sooty.vercel.app/api/complaints", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(complaintData),
